@@ -1,0 +1,17 @@
+name: legal-rag
+metadata:
+  template: legal-rag
+
+infra:
+  provider: bicep
+  path: infra
+  module: main
+
+services:
+  backend:
+    project: .
+    language: python
+    host: containerapp
+    docker:
+      path: Dockerfile
+      context: .

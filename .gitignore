@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+
+# Environment
+.env
+
+# Markdown (except README)
+*.md
+!README.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node
+node_modules/
+app/frontend/dist/
+
+# Data (cached/generated)
+data/bgb_mietrecht.xml
+data/norm_cache.json
+data/usage.db
+data/eval_results.json
+
+# Azure
+.azure/
+*.tfstate
+*.tfstate.backup
+
+# Docker
+.docker/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test / Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Misc
+*.log

@@ -1,0 +1,39 @@
+.content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 8px 0;
+}
+
+.normText {
+    background: #fafafa;
+    border-left: 3px solid #0078d4;
+    padding: 16px;
+    border-radius: 4px;
+    white-space: pre-wrap;
+    line-height: 1.6;
+}
+
+.meta {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.score {
+    color: #888;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.closeButton:hover {
+    background: #f0f0f0;
+    border-radius: 4px;
+}

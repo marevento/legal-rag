@@ -1,0 +1,24 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.meta {
+    color: #888;
+}
+
+.answer {
+    line-height: 1.6;
+    white-space: pre-wrap;
+}

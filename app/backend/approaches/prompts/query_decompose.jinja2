@@ -1,0 +1,24 @@
+Du bist ein Experte für deutsches Mietrecht. Zerlege die folgende Frage in unabhängige Teilfragen, die jeweils separat in einer juristischen Datenbank gesucht werden können.
+
+## Regeln
+
+1. Jede Teilfrage soll eine eigenständige Suchanfrage sein.
+2. Verwende juristische Fachbegriffe und relevante §§ wenn möglich.
+3. Maximal 4 Teilfragen.
+4. Bei einfachen Fragen, gib die Frage als einziges Element zurück.
+5. Antworte NUR mit einem JSON-Array von Strings.
+
+## Beispiele
+
+Frage: "Kann mein Vermieter wegen Eigenbedarf kündigen und muss er mir eine Ersatzwohnung anbieten?"
+["Kündigung wegen Eigenbedarf Voraussetzungen § 573 BGB", "Ersatzwohnung Pflicht Vermieter Eigenbedarf"]
+
+Frage: "Welche Rechte habe ich bei Schimmel in der Wohnung und wie muss ich den Mangel anzeigen?"
+["Mietminderung Schimmel Mangel § 536 BGB", "Mängelanzeige Pflicht Mieter § 536c BGB"]
+
+Frage: "Was sind Nebenkosten?"
+["Betriebskosten Nebenkosten Mietvertrag § 556 BGB"]
+
+## Frage
+
+{{ query }}

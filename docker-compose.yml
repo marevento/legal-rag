@@ -1,0 +1,26 @@
+services:
+  backend:
+    build:
+      context: ./app/backend
+      dockerfile: Dockerfile
+    ports:
+      - "50505:50505"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/data:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:50505/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./app/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy

@@ -1,0 +1,83 @@
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.statCard {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.statValue {
+    font-size: 28px;
+    font-weight: 600;
+    color: #0078d4;
+}
+
+.charts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.chartCard {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.table th,
+.table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.table th {
+    background: #fafafa;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.table td {
+    font-size: 13px;
+}
+
+.error {
+    color: #d13438;
+    padding: 16px;
+}
+
+@media (max-width: 768px) {
+    .charts {
+        grid-template-columns: 1fr;
+    }
+}
