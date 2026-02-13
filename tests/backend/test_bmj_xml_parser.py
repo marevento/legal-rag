@@ -1,6 +1,5 @@
 """Tests for BMJ XML parser."""
 
-import tempfile
 from pathlib import Path
 
 from prepdocslib.bmj_xml_parser import (
@@ -30,7 +29,7 @@ def test_is_in_mietrecht_range():
     assert _is_in_mietrecht_range("1") is False
 
 
-def test_parse_legacy_format():
+def test_parse_legacy_format(tmp_path: Path):
     """Test parsing legacy BMJ XML format with <norm> elements."""
     xml_content = """<?xml version="1.0" encoding="UTF-8"?>
 <dokumente>
@@ -75,11 +74,9 @@ def test_parse_legacy_format():
   </norm>
 </dokumente>"""
 
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=False, encoding="utf-8") as f:
-        f.write(xml_content)
-        f.flush()
-
-        norms = parse_bgb_xml(Path(f.name))
+    xml_file = tmp_path / "test.xml"
+    xml_file.write_text(xml_content, encoding="utf-8")
+    norms = parse_bgb_xml(xml_file)
 
     # Should only include Mietrecht paragraphs
     assert len(norms) == 2
@@ -90,7 +87,7 @@ def test_parse_legacy_format():
     assert norms[0].url == "https://www.gesetze-im-internet.de/bgb/__535.html"
 
 
-def test_parse_empty_xml():
+def test_parse_empty_xml(tmp_path: Path):
     """Test parsing XML with no matching norms."""
     xml_content = """<?xml version="1.0" encoding="UTF-8"?>
 <dokumente>
@@ -105,10 +102,8 @@ def test_parse_empty_xml():
   </norm>
 </dokumente>"""
 
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=False, encoding="utf-8") as f:
-        f.write(xml_content)
-        f.flush()
-
-        norms = parse_bgb_xml(Path(f.name))
+    xml_file = tmp_path / "test_empty.xml"
+    xml_file.write_text(xml_content, encoding="utf-8")
+    norms = parse_bgb_xml(xml_file)
 
     assert len(norms) == 0

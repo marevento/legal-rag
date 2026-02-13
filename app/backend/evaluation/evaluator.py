@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import logging
 import time
 from collections import defaultdict
@@ -20,6 +19,7 @@ from evaluation.metrics import (
 from models.chat import ChatMessage, ChatRequest
 from models.evaluation import (
     EvalResult,
+    GenerationMetrics,
     GoldenExample,
     MetricsReport,
     PatternRecommendation,
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 def load_golden_dataset(path: Path) -> list[GoldenExample]:
     """Load golden dataset from JSONL file."""
     examples = []
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if line:

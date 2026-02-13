@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 import functools
+import logging
 import secrets
 from typing import Callable
 
 from quart import Response, request
 
 import config
+
+logger = logging.getLogger(__name__)
+
+_auth_warning_logged = False
 
 
 def require_auth(f: Callable) -> Callable:
@@ -19,7 +24,13 @@ def require_auth(f: Callable) -> Callable:
         auth = request.authorization
 
         if not config.AUTH_PASSWORD:
-            # No password configured — skip auth (dev mode)
+            global _auth_warning_logged
+            if not _auth_warning_logged:
+                logger.warning(
+                    "AUTH_PASSWORD is not set — authentication is DISABLED. "
+                    "Set AUTH_PASSWORD env var to enable authentication."
+                )
+                _auth_warning_logged = True
             return await f(*args, **kwargs)
 
         if auth is None or not _check_credentials(auth.username, auth.password):

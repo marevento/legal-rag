@@ -53,7 +53,7 @@ def main() -> None:
     logger.info("Step 3: Generating norm_cache.json...")
     cache_path = Path(config.NORM_CACHE_PATH)
     cache_data = {norm.norm_id: norm.model_dump() for norm in norms}
-    with open(cache_path, "w") as f:
+    with open(cache_path, "w", encoding="utf-8") as f:
         json.dump(cache_data, f, ensure_ascii=False, indent=2)
     logger.info("Wrote norm cache to %s (%d entries)", cache_path, len(cache_data))
 
@@ -75,8 +75,10 @@ def main() -> None:
         logger.info("Recreating index...")
         try:
             search_mgr.delete_index()
-        except Exception:
-            pass  # Index may not exist
+        except Exception as exc:
+            # ResourceNotFoundError is expected if index doesn't exist yet
+            if "ResourceNotFoundError" not in type(exc).__name__:
+                logger.warning("Unexpected error deleting index: %s", exc)
 
     search_mgr.create_or_update_index(use_semantic_ranker=args.semantic_ranker)
 

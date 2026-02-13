@@ -50,7 +50,7 @@ export const CitationPanel = ({ source, open, onClose }: Props) => {
                         </Link>
                         {source.relevance_score > 0 && (
                             <Text size={200} className={styles.score}>
-                                Relevanz: {(source.relevance_score * 100).toFixed(1)}%
+                                Relevanz: {source.relevance_score.toFixed(4)}
                             </Text>
                         )}
                     </div>

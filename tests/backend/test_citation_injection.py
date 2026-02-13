@@ -1,7 +1,6 @@
 """Tests for citation injection (anti-hallucination core)."""
 
 import json
-import tempfile
 from pathlib import Path
 
 from models.norm import Norm, NormReference
@@ -69,14 +68,13 @@ def test_no_markers():
     assert result == text
 
 
-def test_norm_cache_load(sample_norms):
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-        data = {n.norm_id: n.model_dump() for n in sample_norms}
-        json.dump(data, f, ensure_ascii=False)
-        f.flush()
+def test_norm_cache_load(sample_norms, tmp_path: Path):
+    cache_file = tmp_path / "cache.json"
+    data = {n.norm_id: n.model_dump() for n in sample_norms}
+    cache_file.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
 
-        cache = NormCache()
-        cache.load(Path(f.name))
-        assert len(cache.norms) == 3
-        assert cache.get("bgb-535") is not None
-        assert cache.get("bgb-535").paragraph == "535"
+    cache = NormCache()
+    cache.load(cache_file)
+    assert len(cache.norms) == 3
+    assert cache.get("bgb-535") is not None
+    assert cache.get("bgb-535").paragraph == "535"

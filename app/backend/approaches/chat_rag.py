@@ -9,11 +9,8 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import AsyncGenerator
 
-from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
-from azure.search.documents.models import VectorizableTextQuery
 from jinja2 import Environment, FileSystemLoader
 from openai import AsyncAzureOpenAI
 
@@ -22,17 +19,16 @@ from approaches.approach import Approach
 from models.chat import (
     ChatRequest,
     ChatResponse,
-    ChatResponseDelta,
     StructuredLLMOutput,
 )
 from models.norm import NormReference
-from postprocessing.citation_injection import inject_citations, norm_cache
+from postprocessing.citation_injection import inject_citations
 from postprocessing.source_validation import validate_cited_sources
 
 logger = logging.getLogger(__name__)
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
-jinja_env = Environment(loader=FileSystemLoader(str(PROMPTS_DIR)), autoescape=False)
+jinja_env = Environment(loader=FileSystemLoader(str(PROMPTS_DIR)), autoescape=True)
 
 
 class ChatRAGApproach(Approach):
@@ -58,7 +54,7 @@ class ChatRAGApproach(Approach):
 
         # Stage 2: Retrieve from Azure AI Search
         timer.start("retrieval")
-        sources = self._search(
+        sources = await self._search_async(
             query=rewritten_query,
             strategy=request.search_strategy,
             top_k=request.top_k,
@@ -110,28 +106,6 @@ class ChatRAGApproach(Approach):
             approach="custom",
         )
 
-    async def run_stream(self, request: ChatRequest) -> AsyncGenerator[ChatResponseDelta, None]:
-        """Streaming variant — generates complete, then streams the post-processed answer."""
-        # For structured output, we need the full response before post-processing
-        response = await self.run(request)
-
-        # Stream the answer in chunks
-        chunk_size = 20
-        words = response.answer.split(" ")
-        for i in range(0, len(words), chunk_size):
-            chunk = " ".join(words[i : i + chunk_size])
-            if i > 0:
-                chunk = " " + chunk
-            yield ChatResponseDelta(delta=chunk)
-
-        # Final delta with sources and metadata
-        yield ChatResponseDelta(
-            delta="",
-            sources=response.sources,
-            confidence=response.confidence,
-            done=True,
-        )
-
     async def _rewrite_query(self, query: str) -> str:
         """Rewrite user query for better retrieval using GPT-4o-mini."""
         template = jinja_env.get_template("query_rewrite.jinja2")
@@ -144,60 +118,15 @@ class ChatRAGApproach(Approach):
                 temperature=0,
                 max_tokens=200,
             )
-            rewritten = response.choices[0].message.content.strip()
+            content = response.choices[0].message.content or ""
+            rewritten = content.strip()
             logger.info("Query rewrite: '%s' -> '%s'", query, rewritten)
             return rewritten
         except Exception:
             logger.warning("Query rewrite failed, using original query", exc_info=True)
             return query
 
-    def _search(
-        self,
-        query: str,
-        strategy: str = "hybrid",
-        top_k: int = 5,
-        use_semantic_ranker: bool = False,
-    ) -> list[NormReference]:
-        """Search Azure AI Search for relevant norms."""
-        search_kwargs: dict = {
-            "top": top_k,
-        }
-
-        if strategy in ("vector", "hybrid"):
-            search_kwargs["vector_queries"] = [
-                VectorizableTextQuery(
-                    text=query,
-                    k_nearest_neighbors=top_k,
-                    fields="content_vector",
-                )
-            ]
-
-        if strategy in ("bm25", "hybrid"):
-            search_kwargs["search_text"] = query
-        else:
-            search_kwargs["search_text"] = None
-
-        if use_semantic_ranker:
-            search_kwargs["query_type"] = "semantic"
-            search_kwargs["semantic_configuration_name"] = config.AZURE_SEARCH_SEMANTIC_CONFIG
-
-        results = self.search_client.search(**search_kwargs)
-
-        sources = []
-        for result in results:
-            sources.append(
-                NormReference(
-                    norm_id=result["norm_id"],
-                    paragraph=result["paragraph"],
-                    titel=result.get("titel", ""),
-                    text=result.get("text", ""),
-                    url=result.get("url", ""),
-                    relevance_score=result.get("@search.score", 0.0),
-                )
-            )
-
-        logger.info("Retrieved %d sources via %s search", len(sources), strategy)
-        return sources
+    # _search and _search_async inherited from Approach base class
 
     async def _generate(
         self,
@@ -247,5 +176,7 @@ class ChatRAGApproach(Approach):
         )
 
         content = response.choices[0].message.content
+        if content is None:
+            raise ValueError("LLM returned empty content — possible content filter refusal")
         parsed = json.loads(content)
         return StructuredLLMOutput.model_validate(parsed)

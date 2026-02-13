@@ -83,7 +83,8 @@ def parse_bgb_xml(xml_path: Path, start: int = 535, end: int = 580) -> list[Norm
         List of Norm objects for Mietrecht paragraphs.
     """
     logger.info("Parsing BGB XML from %s", xml_path)
-    tree = etree.parse(str(xml_path))  # noqa: S320
+    parser = etree.XMLParser(resolve_entities=False)
+    tree = etree.parse(str(xml_path), parser=parser)
     root = tree.getroot()
 
     norms: list[Norm] = []

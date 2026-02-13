@@ -117,16 +117,19 @@ const CategoryBreakdown = ({ report }: { report: MetricsReport }) => {
     const categories = Object.keys(report.results_by_category);
     if (categories.length === 0) return null;
 
-    const chartData = categories.map((cat) => {
-        const results = report.results_by_category[cat];
-        const hybridResults = results.filter((r) => r.search_strategy === "hybrid");
-        const n = hybridResults.length || 1;
-        return {
-            category: cat,
-            recall: Number((hybridResults.reduce((s, r) => s + r.retrieval.recall_at_k, 0) / n).toFixed(3)),
-            precision: Number((hybridResults.reduce((s, r) => s + r.retrieval.precision_at_k, 0) / n).toFixed(3)),
-        };
-    });
+    const chartData = categories
+        .map((cat) => {
+            const results = report.results_by_category[cat];
+            const hybridResults = results.filter((r) => r.search_strategy === "hybrid");
+            if (hybridResults.length === 0) return null;
+            const n = hybridResults.length;
+            return {
+                category: cat,
+                recall: Number((hybridResults.reduce((s, r) => s + r.retrieval.recall_at_k, 0) / n).toFixed(3)),
+                precision: Number((hybridResults.reduce((s, r) => s + r.retrieval.precision_at_k, 0) / n).toFixed(3)),
+            };
+        })
+        .filter((d): d is NonNullable<typeof d> => d !== null);
 
     return (
         <Card className={styles.card}>

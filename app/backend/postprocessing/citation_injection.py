@@ -28,7 +28,7 @@ class NormCache:
 
     def load(self, path: Path) -> None:
         """Load norms from a JSON file."""
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
         self._norms = {k: Norm.model_validate(v) for k, v in data.items()}
         logger.info("Loaded %d norms into cache from %s", len(self._norms), path)
@@ -85,21 +85,3 @@ def inject_citations(
     return CITATION_MARKER_RE.sub(_replace_marker, text)
 
 
-def build_citation_details(sources: list[NormReference]) -> list[dict]:
-    """Build detailed citation objects for the frontend CitationPanel.
-
-    Returns list of dicts with full norm text and URLs for each source.
-    """
-    details = []
-    for i, source in enumerate(sources, 1):
-        norm = norm_cache.get(source.norm_id)
-        details.append({
-            "index": i,
-            "norm_id": source.norm_id,
-            "paragraph": source.paragraph,
-            "titel": norm.titel if norm else source.titel,
-            "text": norm.text if norm else "(Norm text not available)",
-            "url": source.url,
-            "relevance_score": source.relevance_score,
-        })
-    return details

@@ -1,6 +1,7 @@
 """Entry point for the legal-rag backend."""
 
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -17,4 +18,5 @@ logging.basicConfig(
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=50505, debug=True)
+    debug = os.environ.get("DEBUG", "false").lower() == "true"
+    app.run(host="127.0.0.1", port=50505, debug=debug)

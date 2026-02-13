@@ -6,17 +6,13 @@ Switchable via RAG_APPROACH=langchain env var.
 
 from __future__ import annotations
 
-import json
 import logging
 from pathlib import Path
-from typing import AsyncGenerator
 
-from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
 from jinja2 import Environment, FileSystemLoader
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
-from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import AzureChatOpenAI
 from openai import AsyncAzureOpenAI
 
@@ -25,17 +21,15 @@ from approaches.approach import Approach
 from models.chat import (
     ChatRequest,
     ChatResponse,
-    ChatResponseDelta,
     StructuredLLMOutput,
 )
-from models.norm import NormReference
-from postprocessing.citation_injection import inject_citations, norm_cache
+from postprocessing.citation_injection import inject_citations
 from postprocessing.source_validation import validate_cited_sources
 
 logger = logging.getLogger(__name__)
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
-jinja_env = Environment(loader=FileSystemLoader(str(PROMPTS_DIR)), autoescape=False)
+jinja_env = Environment(loader=FileSystemLoader(str(PROMPTS_DIR)), autoescape=True)
 
 
 class ChatLangChainApproach(Approach):
@@ -75,17 +69,16 @@ class ChatLangChainApproach(Approach):
 
         # Stage 1: Query rewrite via LCEL
         timer.start("query_rewrite")
-        rewrite_prompt = ChatPromptTemplate.from_template(
-            jinja_env.get_template("query_rewrite.jinja2").render(query="{query}")
-        )
+        rewrite_template = jinja_env.get_template("query_rewrite.jinja2").render(query=user_query)
+        rewrite_prompt = ChatPromptTemplate.from_messages([("human", rewrite_template)])
         rewrite_chain = rewrite_prompt | self.llm_mini
-        rewrite_result = await rewrite_chain.ainvoke({"query": user_query})
-        rewritten_query = rewrite_result.content.strip()
+        rewrite_result = await rewrite_chain.ainvoke({})
+        rewritten_query = (rewrite_result.content or "").strip() or user_query
         timer.stop()
 
-        # Stage 2: Retrieve (using Azure SDK directly — LangChain retriever is a wrapper)
+        # Stage 2: Retrieve (using shared _search_async from base class)
         timer.start("retrieval")
-        sources = self._search(rewritten_query, request.search_strategy, request.top_k)
+        sources = await self._search_async(rewritten_query, request.search_strategy, request.top_k)
         timer.stop()
 
         if not sources:
@@ -129,62 +122,6 @@ class ChatLangChainApproach(Approach):
             approach="langchain",
         )
 
-    async def run_stream(self, request: ChatRequest) -> AsyncGenerator[ChatResponseDelta, None]:
-        """Streaming — same as custom approach, full then stream."""
-        response = await self.run(request)
+    # run_stream inherited from Approach base class
 
-        chunk_size = 20
-        words = response.answer.split(" ")
-        for i in range(0, len(words), chunk_size):
-            chunk = " ".join(words[i : i + chunk_size])
-            if i > 0:
-                chunk = " " + chunk
-            yield ChatResponseDelta(delta=chunk)
-
-        yield ChatResponseDelta(
-            delta="",
-            sources=response.sources,
-            confidence=response.confidence,
-            done=True,
-        )
-
-    def _search(
-        self,
-        query: str,
-        strategy: str = "hybrid",
-        top_k: int = 5,
-    ) -> list[NormReference]:
-        """Search using Azure SDK (same as custom approach)."""
-        from azure.search.documents.models import VectorizableTextQuery
-
-        search_kwargs: dict = {"top": top_k}
-
-        if strategy in ("vector", "hybrid"):
-            search_kwargs["vector_queries"] = [
-                VectorizableTextQuery(
-                    text=query,
-                    k_nearest_neighbors=top_k,
-                    fields="content_vector",
-                )
-            ]
-
-        if strategy in ("bm25", "hybrid"):
-            search_kwargs["search_text"] = query
-        else:
-            search_kwargs["search_text"] = None
-
-        results = self.search_client.search(**search_kwargs)
-
-        sources = []
-        for result in results:
-            sources.append(
-                NormReference(
-                    norm_id=result["norm_id"],
-                    paragraph=result["paragraph"],
-                    titel=result.get("titel", ""),
-                    text=result.get("text", ""),
-                    url=result.get("url", ""),
-                    relevance_score=result.get("@search.score", 0.0),
-                )
-            )
-        return sources
+    # _search inherited from ChatRAGApproach — both approaches share the same search_client

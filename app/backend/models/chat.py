@@ -16,7 +16,7 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list[ChatMessage]
-    search_strategy: str = Field(default="hybrid", description="bm25, vector, or hybrid")
+    search_strategy: Literal["bm25", "vector", "hybrid"] = Field(default="hybrid")
     temperature: float = Field(default=0.0, ge=0.0, le=1.0)
     top_k: int = Field(default=5, ge=1, le=20)
     use_semantic_ranker: bool = False
