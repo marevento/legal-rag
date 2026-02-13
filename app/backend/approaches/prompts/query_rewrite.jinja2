@@ -18,6 +18,14 @@ Umformuliert: "Betriebskosten Mietvertrag Umlage § 556 BGB Betriebskostenverord
 Benutzer: "Mein Vermieter will mehr Miete"
 Umformuliert: "Mieterhöhung Voraussetzungen Zustimmung Mieter ortsübliche Vergleichsmiete § 558 BGB"
 
+{% if past_messages %}
+## Gesprächsverlauf
+
+{% for msg in past_messages %}
+{{ msg.role }}: {{ msg.content }}
+{% endfor %}
+{% endif %}
+
 ## Aktuelle Anfrage
 
 {{ query }}

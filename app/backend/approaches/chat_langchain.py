@@ -66,10 +66,13 @@ class ChatLangChainApproach(Approach):
     async def run(self, request: ChatRequest) -> ChatResponse:
         timer = self._timer()
         user_query = request.messages[-1].content
+        past_messages = request.messages[:-1]
 
-        # Stage 1: Query rewrite via LCEL
+        # Stage 1: Query rewrite via LCEL (with conversation history)
         timer.start("query_rewrite")
-        rewrite_template = jinja_env.get_template("query_rewrite.jinja2").render(query=user_query)
+        rewrite_template = jinja_env.get_template("query_rewrite.jinja2").render(
+            query=user_query, past_messages=past_messages,
+        )
         rewrite_prompt = ChatPromptTemplate.from_messages([("human", rewrite_template)])
         rewrite_chain = rewrite_prompt | self.llm_mini
         rewrite_result = await rewrite_chain.ainvoke({})
@@ -90,15 +93,18 @@ class ChatLangChainApproach(Approach):
                 approach="langchain",
             )
 
-        # Stage 3: Generate via LCEL chain with structured output
+        # Stage 3: Generate via LCEL chain with structured output (with conversation history)
         timer.start("generation")
         system_template = jinja_env.get_template("chat_system.jinja2")
         system_content = system_template.render(sources=sources)
 
-        chat_prompt = ChatPromptTemplate.from_messages([
-            ("system", system_content),
-            ("human", "{question}"),
-        ])
+        # Build messages: system + past conversation + current question
+        prompt_messages: list[tuple[str, str]] = [("system", system_content)]
+        for msg in past_messages:
+            prompt_messages.append((msg.role, msg.content))
+        prompt_messages.append(("human", "{question}"))
+
+        chat_prompt = ChatPromptTemplate.from_messages(prompt_messages)
 
         # Use LCEL chain: prompt -> LLM -> parse
         chain = chat_prompt | self.llm | self.output_parser

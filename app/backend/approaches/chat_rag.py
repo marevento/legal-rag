@@ -17,6 +17,7 @@ from openai import AsyncAzureOpenAI
 import config
 from approaches.approach import Approach
 from models.chat import (
+    ChatMessage,
     ChatRequest,
     ChatResponse,
     StructuredLLMOutput,
@@ -46,10 +47,11 @@ class ChatRAGApproach(Approach):
         timer = self._timer()
 
         user_query = request.messages[-1].content
+        past_messages = request.messages[:-1]
 
-        # Stage 1: Query rewrite
+        # Stage 1: Query rewrite (with conversation history for follow-up questions)
         timer.start("query_rewrite")
-        rewritten_query = await self._rewrite_query(user_query)
+        rewritten_query = await self._rewrite_query(user_query, past_messages)
         timer.stop()
 
         # Stage 2: Retrieve from Azure AI Search
@@ -70,9 +72,9 @@ class ChatRAGApproach(Approach):
                 search_strategy=request.search_strategy,
             )
 
-        # Stage 3: Generate structured LLM response
+        # Stage 3: Generate structured LLM response (with conversation history)
         timer.start("generation")
-        llm_output = await self._generate(user_query, sources, request.temperature)
+        llm_output = await self._generate(user_query, sources, request.temperature, past_messages)
         timer.stop()
 
         # Stage 4: Post-processing
@@ -106,10 +108,10 @@ class ChatRAGApproach(Approach):
             approach="custom",
         )
 
-    async def _rewrite_query(self, query: str) -> str:
+    async def _rewrite_query(self, query: str, past_messages: list[ChatMessage] | None = None) -> str:
         """Rewrite user query for better retrieval using GPT-4o-mini."""
         template = jinja_env.get_template("query_rewrite.jinja2")
-        prompt = template.render(query=query)
+        prompt = template.render(query=query, past_messages=past_messages or [])
 
         try:
             response = await self.openai_client.chat.completions.create(
@@ -133,17 +135,21 @@ class ChatRAGApproach(Approach):
         query: str,
         sources: list[NormReference],
         temperature: float = 0.0,
+        past_messages: list[ChatMessage] | None = None,
     ) -> StructuredLLMOutput:
         """Generate structured LLM response with citation markers."""
         template = jinja_env.get_template("chat_system.jinja2")
         system_prompt = template.render(sources=sources)
 
+        # Build messages: system + conversation history + current question with sources
+        messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
+        for msg in past_messages or []:
+            messages.append({"role": msg.role, "content": msg.content})
+        messages.append({"role": "user", "content": query})
+
         response = await self.openai_client.chat.completions.create(
             model=config.AZURE_OPENAI_CHAT_DEPLOYMENT,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": query},
-            ],
+            messages=messages,
             temperature=temperature,
             response_format={
                 "type": "json_schema",
