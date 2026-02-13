@@ -8,6 +8,14 @@ from pathlib import Path
 # Ensure the backend directory is on the path
 sys.path.insert(0, str(Path(__file__).parent))
 
+# Configure Azure Monitor if connection string is available (deployed on Azure).
+# Must be called before any other logging/instrumentation setup.
+_appinsights_conn = os.environ.get("APPLICATIONINSIGHTS_CONNECTION_STRING", "")
+if _appinsights_conn:
+    from azure.monitor.opentelemetry import configure_azure_monitor
+
+    configure_azure_monitor(connection_string=_appinsights_conn)
+
 from app import create_app
 
 logging.basicConfig(

@@ -1,0 +1,81 @@
+name: Evaluation
+
+on:
+  workflow_dispatch:
+    inputs:
+      strategies:
+        description: "Search strategies to evaluate (comma-separated)"
+        default: "bm25,vector,hybrid"
+        type: string
+      top_k:
+        description: "Number of documents to retrieve"
+        default: "5"
+        type: string
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app/backend
+    env:
+      AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      AZURE_SEARCH_ENDPOINT: ${{ secrets.AZURE_SEARCH_ENDPOINT }}
+      AZURE_SEARCH_API_KEY: ${{ secrets.AZURE_SEARCH_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run evaluation
+        run: |
+          python -c "
+          import asyncio, json
+          from pathlib import Path
+          from evaluation.evaluator import load_golden_dataset, run_evaluation
+          from approaches.chat_rag import ChatRAGApproach
+          from azure.core.credentials import AzureKeyCredential
+          from azure.search.documents import SearchClient
+          from openai import AsyncAzureOpenAI
+          import config
+
+          async def main():
+              openai_client = AsyncAzureOpenAI(
+                  azure_endpoint=config.AZURE_OPENAI_ENDPOINT,
+                  api_key=config.AZURE_OPENAI_API_KEY,
+                  api_version=config.AZURE_OPENAI_API_VERSION,
+              )
+              search_client = SearchClient(
+                  endpoint=config.AZURE_SEARCH_ENDPOINT,
+                  index_name=config.AZURE_SEARCH_INDEX,
+                  credential=AzureKeyCredential(config.AZURE_SEARCH_API_KEY),
+              )
+              approach = ChatRAGApproach(openai_client=openai_client, search_client=search_client)
+              examples = load_golden_dataset(Path(config.DATA_DIR) / 'golden_dataset.jsonl')
+              strategies = '${{ inputs.strategies }}'.split(',')
+              report = await run_evaluation(
+                  approach=approach,
+                  openai_client=openai_client,
+                  examples=examples,
+                  strategies=strategies,
+                  top_k=int('${{ inputs.top_k }}'),
+              )
+              print(json.dumps(report.model_dump(), indent=2, ensure_ascii=False))
+
+          asyncio.run(main())
+          "
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results-${{ github.run_id }}
+          path: app/backend/eval_results.json
+          retention-days: 30
+          if-no-files-found: ignore

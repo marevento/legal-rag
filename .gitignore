@@ -12,7 +12,10 @@ env/
 
 # Environment
 .env
-AZURE_SETUP.local.md
+
+# Markdown (except README)
+*.md
+!README.md
 
 # IDE
 .vscode/

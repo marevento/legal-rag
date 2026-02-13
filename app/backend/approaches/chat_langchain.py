@@ -118,7 +118,24 @@ class ChatLangChainApproach(Approach):
         cited_sources = [s for i, s in enumerate(sources, 1) if i in valid_indices]
         timer.stop()
 
-        logger.info("LangChain pipeline completed in %.0fms", timer.total_ms)
+        logger.info(
+            "RAG pipeline completed",
+            extra={
+                "custom_dimensions": {
+                    "approach": "langchain",
+                    "total_ms": round(timer.total_ms),
+                    "query_rewrite_ms": round(timer.stages.get("query_rewrite", 0)),
+                    "retrieval_ms": round(timer.stages.get("retrieval", 0)),
+                    "generation_ms": round(timer.stages.get("generation", 0)),
+                    "postprocessing_ms": round(timer.stages.get("postprocessing", 0)),
+                    "search_strategy": request.search_strategy,
+                    "sources_retrieved": len(sources),
+                    "sources_cited": len(valid_indices),
+                    "confidence": llm_output.confidence,
+                    "history_turns": len(past_messages),
+                },
+            },
+        )
 
         return ChatResponse(
             answer=answer,

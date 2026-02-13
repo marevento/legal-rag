@@ -89,12 +89,22 @@ class ChatRAGApproach(Approach):
         timer.stop()
 
         logger.info(
-            "RAG pipeline completed in %.0fms (rewrite=%.0f, retrieval=%.0f, generation=%.0f, postprocess=%.0f)",
-            timer.total_ms,
-            timer.stages.get("query_rewrite", 0),
-            timer.stages.get("retrieval", 0),
-            timer.stages.get("generation", 0),
-            timer.stages.get("postprocessing", 0),
+            "RAG pipeline completed",
+            extra={
+                "custom_dimensions": {
+                    "approach": "custom",
+                    "total_ms": round(timer.total_ms),
+                    "query_rewrite_ms": round(timer.stages.get("query_rewrite", 0)),
+                    "retrieval_ms": round(timer.stages.get("retrieval", 0)),
+                    "generation_ms": round(timer.stages.get("generation", 0)),
+                    "postprocessing_ms": round(timer.stages.get("postprocessing", 0)),
+                    "search_strategy": request.search_strategy,
+                    "sources_retrieved": len(sources),
+                    "sources_cited": len(valid_indices),
+                    "confidence": llm_output.confidence,
+                    "history_turns": len(past_messages),
+                },
+            },
         )
 
         # Filter sources to only those actually cited

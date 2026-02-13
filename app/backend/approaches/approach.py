@@ -92,10 +92,14 @@ class Approach(ABC):
         )
 
     async def run_stream(self, request: ChatRequest) -> AsyncGenerator[ChatResponseDelta, None]:
-        """Streaming variant — runs full pipeline, then streams the answer in word chunks.
+        """Streaming variant — compute-then-stream (not token-level streaming).
 
-        Structured output requires the full response for post-processing,
-        so this is intentionally compute-then-stream, not token-level streaming.
+        Design decision: structured JSON output must be complete before citation
+        injection can replace [1][2] markers with verbatim norm text. Token-level
+        streaming would require either moving injection to the frontend (duplicating
+        logic) or streaming raw markers and sending a correction delta (causing
+        flicker). Compute-then-stream keeps the anti-hallucination pipeline intact
+        at the cost of higher TTFB (~2.5s).
         """
         response = await self.run(request)
 
