@@ -1,0 +1,33 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.source {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 12px;
+    background: #f0f0f0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+    min-width: 180px;
+}
+
+.source:hover {
+    background: #e4e4e4;
+}
+
+.titel {
+    color: #666;
+    font-style: italic;
+}

@@ -1,0 +1,54 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.card {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.latencyRow {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+}
+
+.latencyItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.recommendations {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.recommendation {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    background: #fafafa;
+    border-radius: 8px;
+}
+
+.recHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.recExplanation {
+    color: #444;
+}
+
+.recMeta {
+    color: #888;
+}

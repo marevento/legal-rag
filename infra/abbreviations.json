@@ -1,0 +1,12 @@
+{
+  "resourceGroup": "rg-",
+  "searchService": "srch-",
+  "openAiAccount": "oai-",
+  "storageAccount": "st",
+  "containerRegistry": "cr",
+  "keyVault": "kv-",
+  "containerApp": "ca-",
+  "containerAppsEnvironment": "cae-",
+  "logAnalyticsWorkspace": "log-",
+  "applicationInsights": "appi-"
+}

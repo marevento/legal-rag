@@ -1,0 +1,37 @@
+{"question": "Was sind die Hauptpflichten des Vermieters?", "category": "simple_technical", "expected_norm_ids": ["bgb-535"], "expected_answer_contains": ["Gebrauch", "Mietsache", "überlassen"]}
+{"question": "Was sind die Hauptpflichten des Mieters?", "category": "simple_technical", "expected_norm_ids": ["bgb-535"], "expected_answer_contains": ["Miete", "entrichten"]}
+{"question": "Was sind Betriebskosten?", "category": "definition", "expected_norm_ids": ["bgb-556"], "expected_answer_contains": ["Betriebskosten", "Eigentümer"]}
+{"question": "Wie werden Betriebskosten abgerechnet?", "category": "simple_technical", "expected_norm_ids": ["bgb-556"], "expected_answer_contains": ["Abrechnung", "Vorauszahlungen"]}
+{"question": "Wann muss die Betriebskostenabrechnung vorliegen?", "category": "simple_technical", "expected_norm_ids": ["bgb-556"], "expected_answer_contains": ["Abrechnung"]}
+{"question": "Was ist eine Mieterhöhung bis zur ortsüblichen Vergleichsmiete?", "category": "definition", "expected_norm_ids": ["bgb-558"], "expected_answer_contains": ["Vergleichsmiete", "Zustimmung"]}
+{"question": "Wie kann der Vermieter die Miete erhöhen?", "category": "simple_technical", "expected_norm_ids": ["bgb-558", "bgb-559"], "expected_answer_contains": ["Mieterhöhung"]}
+{"question": "Was ist die Kappungsgrenze bei Mieterhöhungen?", "category": "definition", "expected_norm_ids": ["bgb-558"], "expected_answer_contains": ["Kappungsgrenze", "Prozent"]}
+{"question": "Darf mein Vermieter einfach kündigen?", "category": "colloquial", "expected_norm_ids": ["bgb-573"], "expected_answer_contains": ["berechtigtes Interesse", "Kündigung"]}
+{"question": "Wann darf der Vermieter kündigen?", "category": "simple_technical", "expected_norm_ids": ["bgb-573"], "expected_answer_contains": ["berechtigtes Interesse"]}
+{"question": "Was ist Eigenbedarf?", "category": "definition", "expected_norm_ids": ["bgb-573"], "expected_answer_contains": ["Eigenbedarf", "Familienangehörige"]}
+{"question": "Wie lang ist die Kündigungsfrist für den Vermieter?", "category": "simple_technical", "expected_norm_ids": ["bgb-573c"], "expected_answer_contains": ["Kündigungsfrist", "Monate"]}
+{"question": "Wann darf der Vermieter kündigen und wie lang ist die Frist?", "category": "multi_part", "expected_norm_ids": ["bgb-573", "bgb-573c"], "expected_answer_contains": ["berechtigtes Interesse", "Frist"]}
+{"question": "Was passiert wenn mein Vermieter mir kündigt weil er die Wohnung selbst braucht?", "category": "colloquial", "expected_norm_ids": ["bgb-573", "bgb-574"], "expected_answer_contains": ["Eigenbedarf", "Widerspruch"]}
+{"question": "Was ist die Mietpreisbremse?", "category": "definition", "expected_norm_ids": ["bgb-556d", "bgb-556e"], "expected_answer_contains": ["Miete", "ortsübliche"]}
+{"question": "Wann darf der Mieter die Miete mindern?", "category": "simple_technical", "expected_norm_ids": ["bgb-536"], "expected_answer_contains": ["Mangel", "Minderung"]}
+{"question": "Meine Heizung ist kaputt, kann ich weniger Miete zahlen?", "category": "colloquial", "expected_norm_ids": ["bgb-536"], "expected_answer_contains": ["Mangel", "Minderung"]}
+{"question": "Was ist ein Mangel der Mietsache?", "category": "definition", "expected_norm_ids": ["bgb-536"], "expected_answer_contains": ["Mangel", "Tauglichkeit"]}
+{"question": "Muss der Vermieter Schönheitsreparaturen machen?", "category": "colloquial", "expected_norm_ids": ["bgb-535"], "expected_answer_contains": ["Zustand", "erhalten"]}
+{"question": "Kann der Mieter Modernisierungskosten auf die Miete umlegen?", "category": "simple_technical", "expected_norm_ids": ["bgb-559"], "expected_answer_contains": ["Modernisierung", "Mieterhöhung"]}
+{"question": "Was passiert bei einer Modernisierung durch den Vermieter?", "category": "simple_technical", "expected_norm_ids": ["bgb-555", "bgb-559"], "expected_answer_contains": ["Modernisierung"]}
+{"question": "Darf der Mieter untervermieten?", "category": "colloquial", "expected_norm_ids": ["bgb-540"], "expected_answer_contains": ["Untervermietung", "Erlaubnis"]}
+{"question": "Wann hat der Mieter ein Recht auf Untervermietung?", "category": "simple_technical", "expected_norm_ids": ["bgb-553"], "expected_answer_contains": ["Untervermietung", "berechtigtes Interesse"]}
+{"question": "Was ist eine Staffelmiete?", "category": "definition", "expected_norm_ids": ["bgb-557a"], "expected_answer_contains": ["Staffelmiete"]}
+{"question": "Was ist eine Indexmiete?", "category": "definition", "expected_norm_ids": ["bgb-557b"], "expected_answer_contains": ["Indexmiete", "Preisindex"]}
+{"question": "Kann ich als Mieter fristlos kündigen?", "category": "colloquial", "expected_norm_ids": ["bgb-543", "bgb-569"], "expected_answer_contains": ["fristlose Kündigung", "wichtiger Grund"]}
+{"question": "Was ist eine fristlose Kündigung des Mietvertrags?", "category": "definition", "expected_norm_ids": ["bgb-543"], "expected_answer_contains": ["fristlose Kündigung", "wichtiger Grund"]}
+{"question": "Unter welchen Umständen kann der Vermieter fristlos kündigen?", "category": "simple_technical", "expected_norm_ids": ["bgb-543", "bgb-569"], "expected_answer_contains": ["fristlos", "Zahlungsverzug"]}
+{"question": "Wann darf der Vermieter fristlos kündigen und was ist Eigenbedarf?", "category": "multi_part", "expected_norm_ids": ["bgb-543", "bgb-573"], "expected_answer_contains": ["fristlos", "Eigenbedarf"]}
+{"question": "Wie muss eine Kündigung des Mietvertrags aussehen?", "category": "simple_technical", "expected_norm_ids": ["bgb-568"], "expected_answer_contains": ["Schriftform", "Kündigung"]}
+{"question": "Was ist die Kaution und wie hoch darf sie sein?", "category": "multi_part", "expected_norm_ids": ["bgb-551"], "expected_answer_contains": ["Kaution", "Monatsmieten"]}
+{"question": "Mein Vermieter will drei Monatsmieten Kaution, ist das erlaubt?", "category": "colloquial", "expected_norm_ids": ["bgb-551"], "expected_answer_contains": ["Kaution", "drei"]}
+{"question": "Wann muss der Vermieter die Kaution zurückzahlen?", "category": "simple_technical", "expected_norm_ids": ["bgb-551"], "expected_answer_contains": ["Kaution", "zurück"]}
+{"question": "Was passiert mit der Kaution bei Mietende?", "category": "simple_technical", "expected_norm_ids": ["bgb-551"], "expected_answer_contains": ["Kaution"]}
+{"question": "Darf der Vermieter die Wohnung betreten?", "category": "colloquial", "expected_norm_ids": ["bgb-535"], "expected_answer_contains": ["Gebrauch", "Mieter"]}
+{"question": "Was regelt das BGB zum Thema Mietkaution und Kündigungsfristen?", "category": "complex", "expected_norm_ids": ["bgb-551", "bgb-573c"], "expected_answer_contains": ["Kaution", "Kündigungsfrist"]}
+{"question": "Welche Rechte hat der Mieter bei Mängeln der Wohnung und wie kann er die Miete mindern?", "category": "complex", "expected_norm_ids": ["bgb-536", "bgb-536a"], "expected_answer_contains": ["Mangel", "Minderung"]}
