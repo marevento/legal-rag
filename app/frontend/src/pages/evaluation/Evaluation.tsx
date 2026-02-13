@@ -1,9 +1,14 @@
-import { Button, Spinner, Text, Title1 } from "@fluentui/react-components";
+import { Button, ProgressBar, Text, Title1 } from "@fluentui/react-components";
 import { ArrowLeft24Regular, Play24Regular } from "@fluentui/react-icons";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { type MetricsReport, runEvaluation } from "../../api/api";
+import {
+    type EvalProgressData,
+    type MetricsReport,
+    getEvalStatus,
+    startEvaluation,
+} from "../../api/api";
 import { MetricsDashboard } from "../../components/MetricsDashboard/MetricsDashboard";
 import styles from "./Evaluation.module.css";
 
@@ -12,16 +17,55 @@ export const Evaluation = () => {
     const [report, setReport] = useState<MetricsReport | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [progress, setProgress] = useState<EvalProgressData | null>(null);
+    const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    const stopPolling = useCallback(() => {
+        if (pollingRef.current) {
+            clearInterval(pollingRef.current);
+            pollingRef.current = null;
+        }
+    }, []);
+
+    const startPolling = useCallback(() => {
+        stopPolling();
+        pollingRef.current = setInterval(async () => {
+            try {
+                const status = await getEvalStatus();
+                if (status.progress) {
+                    setProgress(status.progress);
+                }
+                if (status.report) {
+                    setReport(status.report);
+                    setIsLoading(false);
+                    setProgress(null);
+                    stopPolling();
+                }
+                if (!status.running && !status.report) {
+                    setError("Evaluation stopped unexpectedly");
+                    setIsLoading(false);
+                    stopPolling();
+                }
+            } catch {
+                // Ignore transient polling errors
+            }
+        }, 1000);
+    }, [stopPolling]);
+
+    useEffect(() => {
+        return () => stopPolling();
+    }, [stopPolling]);
 
     const handleRun = async () => {
         setIsLoading(true);
         setError(null);
+        setReport(null);
+        setProgress(null);
         try {
-            const result = await runEvaluation();
-            setReport(result);
+            await startEvaluation();
+            startPolling();
         } catch (e) {
             setError(e instanceof Error ? e.message : "Evaluation failed");
-        } finally {
             setIsLoading(false);
         }
     };
@@ -53,9 +97,22 @@ export const Evaluation = () => {
                 </Button>
             </div>
 
-            {isLoading && (
-                <div className={styles.loading}>
-                    <Spinner size="large" label="Running evaluation against golden dataset..." />
+            {isLoading && progress && (
+                <div className={styles.progressContainer}>
+                    <ProgressBar value={progress.completed / progress.total} />
+                    <div className={styles.progressInfo}>
+                        <Text size={300} weight="semibold">
+                            {progress.completed}/{progress.total} — {progress.strategy}
+                        </Text>
+                        <Text size={200} className={styles.progressQuestion}>
+                            {progress.question}
+                        </Text>
+                    </div>
+                    {progress.status === "throttled" && (
+                        <div className={styles.throttleWarning}>
+                            <Text size={200}>Rate limited — waiting for API quota to reset...</Text>
+                        </div>
+                    )}
                 </div>
             )}
 

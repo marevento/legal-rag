@@ -97,11 +97,13 @@ class ChatLangChainApproach(Approach):
         timer.start("generation")
         system_template = jinja_env.get_template("chat_system.jinja2")
         system_content = system_template.render(sources=sources)
+        # Escape curly braces so LangChain doesn't treat them as template variables
+        system_content = system_content.replace("{", "{{").replace("}", "}}")
 
         # Build messages: system + past conversation + current question
         prompt_messages: list[tuple[str, str]] = [("system", system_content)]
         for msg in past_messages:
-            prompt_messages.append((msg.role, msg.content))
+            prompt_messages.append((msg.role, msg.content.replace("{", "{{").replace("}", "}}")))
         prompt_messages.append(("human", "{question}"))
 
         chat_prompt = ChatPromptTemplate.from_messages(prompt_messages)
@@ -114,8 +116,19 @@ class ChatLangChainApproach(Approach):
         # Stage 4: Same post-processing as custom approach
         timer.start("postprocessing")
         valid_indices = validate_cited_sources(llm_output.cited_sources, sources)
-        answer = inject_citations(llm_output.explanation, sources)
-        cited_sources = [s for i, s in enumerate(sources, 1) if i in valid_indices]
+
+        # Renumber citations to match filtered source list
+        import re
+        sorted_valid = sorted(set(valid_indices))
+        renumber_map = {old: new for new, old in enumerate(sorted_valid, 1)}
+
+        def _renumber(match: re.Match) -> str:
+            idx = int(match.group(1))
+            return f"[{renumber_map[idx]}]" if idx in renumber_map else match.group(0)
+
+        renumbered_explanation = re.sub(r"\[(\d+)\]", _renumber, llm_output.explanation)
+        cited_sources = [sources[i - 1] for i in sorted_valid]
+        answer = inject_citations(renumbered_explanation, cited_sources)
         timer.stop()
 
         logger.info(

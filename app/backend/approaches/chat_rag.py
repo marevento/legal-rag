@@ -83,8 +83,23 @@ class ChatRAGApproach(Approach):
         # Validate cited sources
         valid_indices = validate_cited_sources(llm_output.cited_sources, sources)
 
-        # Inject verbatim citations from norm cache
-        answer = inject_citations(llm_output.explanation, sources)
+        # Build renumbering map: old index -> new index (1-based)
+        sorted_valid = sorted(set(valid_indices))
+        renumber_map = {old: new for new, old in enumerate(sorted_valid, 1)}
+
+        # Renumber citation markers in the explanation before injection
+        import re
+        def _renumber(match: re.Match) -> str:
+            idx = int(match.group(1))
+            return f"[{renumber_map[idx]}]" if idx in renumber_map else match.group(0)
+
+        renumbered_explanation = re.sub(r"\[(\d+)\]", _renumber, llm_output.explanation)
+
+        # Filter sources to only those cited, preserving the new ordering
+        cited_sources = [sources[i - 1] for i in sorted_valid]
+
+        # Inject verbatim citations from norm cache (now using renumbered text + filtered sources)
+        answer = inject_citations(renumbered_explanation, cited_sources)
 
         timer.stop()
 
@@ -106,9 +121,6 @@ class ChatRAGApproach(Approach):
                 },
             },
         )
-
-        # Filter sources to only those actually cited
-        cited_sources = [s for i, s in enumerate(sources, 1) if i in valid_indices]
 
         return ChatResponse(
             answer=answer,

@@ -117,10 +117,24 @@ export async function getConfig(): Promise<AppConfig> {
     return response.json();
 }
 
-export async function runEvaluation(
+export interface EvalProgressData {
+    completed: number;
+    total: number;
+    strategy: string;
+    question: string;
+    status: "running" | "throttled";
+}
+
+export interface EvalStatusResponse {
+    running: boolean;
+    progress: EvalProgressData | null;
+    report: MetricsReport | null;
+}
+
+export async function startEvaluation(
     strategies?: string[],
     topK?: number
-): Promise<MetricsReport> {
+): Promise<void> {
     const response = await fetch("/evaluate", {
         method: "POST",
         headers: {
@@ -129,6 +143,16 @@ export async function runEvaluation(
         },
         body: JSON.stringify({ strategies, top_k: topK }),
     });
-    if (!response.ok) throw new Error("Evaluation failed");
+    if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Evaluation failed");
+    }
+}
+
+export async function getEvalStatus(): Promise<EvalStatusResponse> {
+    const response = await fetch("/evaluate/status", {
+        headers: getAuthHeaders(),
+    });
+    if (!response.ok) throw new Error("Failed to fetch evaluation status");
     return response.json();
 }

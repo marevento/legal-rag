@@ -3,7 +3,7 @@ param location string
 param tags object = {}
 
 @secure()
-param authPassword string
+param authUsers string
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: name
@@ -21,11 +21,11 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   }
 }
 
-resource authPasswordSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+resource authUsersSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   parent: keyVault
-  name: 'auth-password'
+  name: 'auth-users'
   properties: {
-    value: authPassword
+    value: authUsers
   }
 }
 

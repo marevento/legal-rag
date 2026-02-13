@@ -10,7 +10,8 @@ from contextlib import contextmanager
 from typing import AsyncGenerator, Iterator
 
 from azure.search.documents import SearchClient
-from azure.search.documents.models import VectorizableTextQuery
+from azure.search.documents.models import VectorizedQuery
+from openai import AzureOpenAI
 
 import config
 from models.chat import ChatRequest, ChatResponse, ChatResponseDelta
@@ -29,6 +30,20 @@ class Approach(ABC):
         """Execute the full RAG pipeline and return a complete response."""
         ...
 
+    def _embed_query(self, text: str) -> list[float]:
+        """Embed a query string using Azure OpenAI."""
+        client = AzureOpenAI(
+            azure_endpoint=config.AZURE_OPENAI_ENDPOINT,
+            api_key=config.AZURE_OPENAI_API_KEY,
+            api_version=config.AZURE_OPENAI_API_VERSION,
+        )
+        response = client.embeddings.create(
+            model=config.AZURE_OPENAI_EMBEDDING_DEPLOYMENT,
+            input=text,
+            dimensions=config.AZURE_OPENAI_EMBEDDING_DIMENSIONS,
+        )
+        return response.data[0].embedding
+
     def _search(
         self,
         query: str,
@@ -40,9 +55,10 @@ class Approach(ABC):
         search_kwargs: dict = {"top": top_k}
 
         if strategy in ("vector", "hybrid"):
+            embedding = self._embed_query(query)
             search_kwargs["vector_queries"] = [
-                VectorizableTextQuery(
-                    text=query,
+                VectorizedQuery(
+                    vector=embedding,
                     k_nearest_neighbors=top_k,
                     fields="content_vector",
                 )

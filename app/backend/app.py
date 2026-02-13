@@ -9,7 +9,7 @@ from pathlib import Path
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
 from openai import AsyncAzureOpenAI
-from quart import Quart, jsonify, request
+from quart import Quart, jsonify, request, send_from_directory
 from quart.typing import ResponseReturnValue
 from quart_cors import cors
 
@@ -23,8 +23,11 @@ from postprocessing.citation_injection import norm_cache
 logger = logging.getLogger(__name__)
 
 
+STATIC_DIR = Path(__file__).parent / "static"
+
+
 def create_app() -> Quart:
-    app = Quart(__name__, static_folder=None)
+    app = Quart(__name__, static_folder=str(STATIC_DIR) if STATIC_DIR.exists() else None)
     app.config["MAX_CONTENT_LENGTH"] = 1_000_000  # 1MB request body limit
 
     # CORS — restrict to configured origin, or allow all in dev
@@ -154,16 +157,26 @@ def _register_routes(app: Quart) -> None:
         ]
         return jsonify(norms)
 
+    # In-memory evaluation state for polling
+    _eval_state: dict = {"running": False, "progress": None, "report": None}
+
     @app.route("/evaluate", methods=["POST"])
     @require_auth
     async def evaluate() -> ResponseReturnValue:
-        """Run evaluation suite against the golden dataset."""
+        """Start evaluation in the background."""
         import asyncio
 
-        from evaluation.evaluator import load_golden_dataset, run_evaluation
+        from evaluation.evaluator import (
+            EvalProgress,
+            load_golden_dataset,
+            run_evaluation_stream,
+        )
+        from models.evaluation import MetricsReport
+
+        if _eval_state["running"]:
+            return jsonify({"error": "Evaluation already running"}), 409
 
         MAX_EXAMPLES = 50
-        EVAL_TIMEOUT_S = 600  # 10 minutes
 
         data = await request.get_json() or {}
         strategies = data.get("strategies", ["bm25", "vector", "hybrid"])
@@ -176,21 +189,58 @@ def _register_routes(app: Quart) -> None:
         examples = load_golden_dataset(golden_path)[:MAX_EXAMPLES]
         approach = _get_approach(app, data.get("approach", config.RAG_APPROACH))
 
-        try:
-            report = await asyncio.wait_for(
-                run_evaluation(
+        async def run_in_background():
+            _eval_state["running"] = True
+            _eval_state["progress"] = None
+            _eval_state["report"] = None
+            try:
+                async for event in run_evaluation_stream(
                     approach=approach,
                     openai_client=app.config["openai_client"],
                     examples=examples,
                     strategies=strategies,
                     top_k=top_k,
-                ),
-                timeout=EVAL_TIMEOUT_S,
-            )
-        except asyncio.TimeoutError:
-            return jsonify({"error": "Evaluation timed out"}), 504
+                ):
+                    if isinstance(event, EvalProgress):
+                        _eval_state["progress"] = {
+                            "completed": event.completed,
+                            "total": event.total,
+                            "strategy": event.strategy,
+                            "question": event.question,
+                            "status": event.status,
+                        }
+                    elif isinstance(event, MetricsReport):
+                        _eval_state["report"] = event.model_dump()
+            finally:
+                _eval_state["running"] = False
 
-        return jsonify(report.model_dump())
+        asyncio.ensure_future(run_in_background())
+        return jsonify({"status": "started"})
+
+    @app.route("/evaluate/status", methods=["GET"])
+    @require_auth
+    async def evaluate_status() -> ResponseReturnValue:
+        """Poll evaluation progress."""
+        return jsonify({
+            "running": _eval_state["running"],
+            "progress": _eval_state["progress"],
+            "report": _eval_state["report"],
+        })
+
+    # Serve frontend SPA (when static files are bundled)
+    if STATIC_DIR.exists():
+
+        @app.route("/")
+        async def index() -> ResponseReturnValue:
+            return await send_from_directory(str(STATIC_DIR), "index.html")
+
+        @app.route("/<path:path>")
+        async def static_files(path: str) -> ResponseReturnValue:
+            file_path = STATIC_DIR / path
+            if file_path.is_file():
+                return await send_from_directory(str(STATIC_DIR), path)
+            # SPA fallback — serve index.html for client-side routes
+            return await send_from_directory(str(STATIC_DIR), "index.html")
 
     @app.errorhandler(400)
     async def bad_request(e: Exception) -> ResponseReturnValue:

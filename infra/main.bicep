@@ -7,7 +7,7 @@ param environmentName string
 
 @minLength(1)
 @description('Primary location for all resources')
-param location string = 'westeurope'
+param location string = 'swedencentral'
 
 @description('Azure AI Search SKU: free, basic, or standard')
 param searchServiceSku string = 'free'
@@ -21,9 +21,9 @@ param chatMiniModelDeployment string = 'gpt-4o-mini'
 @description('Azure OpenAI embedding model deployment name')
 param embeddingModelDeployment string = 'text-embedding-3-large'
 
-@description('Auth password for HTTP Basic Auth')
+@description('Auth users JSON: {"username": "password", ...}')
 @secure()
-param authPassword string
+param authUsers string
 
 var abbrs = loadJsonContent('abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
@@ -92,7 +92,7 @@ module keyVault 'core/keyvault.bicep' = {
     name: '${abbrs.keyVault}${resourceToken}'
     location: location
     tags: tags
-    authPassword: authPassword
+    authUsers: authUsers
   }
 }
 
@@ -103,13 +103,13 @@ module containerApp 'core/container-app.bicep' = {
   params: {
     name: '${abbrs.containerApp}${resourceToken}'
     location: location
-    tags: tags
+    tags: union(tags, { 'azd-service-name': 'backend' })
     containerRegistryName: registry.outputs.name
     openaiEndpoint: openai.outputs.endpoint
     openaiKey: openai.outputs.key
     searchEndpoint: searchService.outputs.endpoint
     searchKey: searchService.outputs.key
-    authPassword: authPassword
+    authUsers: authUsers
   }
 }
 
@@ -117,4 +117,5 @@ module containerApp 'core/container-app.bicep' = {
 output AZURE_RESOURCE_GROUP string = rg.name
 output AZURE_OPENAI_ENDPOINT string = openai.outputs.endpoint
 output AZURE_SEARCH_ENDPOINT string = searchService.outputs.endpoint
+output AZURE_CONTAINER_REGISTRY_ENDPOINT string = registry.outputs.loginServer
 output AZURE_CONTAINER_APP_URL string = containerApp.outputs.url

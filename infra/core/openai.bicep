@@ -28,8 +28,8 @@ resource chatDeployment 'Microsoft.CognitiveServices/accounts/deployments@2024-0
   parent: openai
   name: chatModelDeployment
   sku: {
-    name: 'Standard'
-    capacity: 10
+    name: 'GlobalStandard'
+    capacity: 30
   }
   properties: {
     model: {
@@ -45,8 +45,8 @@ resource chatMiniDeployment 'Microsoft.CognitiveServices/accounts/deployments@20
   name: chatMiniModelDeployment
   dependsOn: [chatDeployment]
   sku: {
-    name: 'Standard'
-    capacity: 10
+    name: 'GlobalStandard'
+    capacity: 30
   }
   properties: {
     model: {
@@ -62,8 +62,8 @@ resource embeddingDeployment 'Microsoft.CognitiveServices/accounts/deployments@2
   name: embeddingModelDeployment
   dependsOn: [chatMiniDeployment]
   sku: {
-    name: 'Standard'
-    capacity: 10
+    name: 'GlobalStandard'
+    capacity: 30
   }
   properties: {
     model: {

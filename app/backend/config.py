@@ -1,5 +1,6 @@
 """Configuration constants for the legal-rag backend."""
 
+import json
 import logging
 import os
 
@@ -30,8 +31,20 @@ AZURE_STORAGE_CONNECTION_STRING = os.environ.get("AZURE_STORAGE_CONNECTION_STRIN
 AZURE_STORAGE_CONTAINER = os.environ.get("AZURE_STORAGE_CONTAINER", "documents")
 
 # Authentication
-AUTH_USERNAME = os.environ.get("AUTH_USERNAME", "")
-AUTH_PASSWORD = os.environ.get("AUTH_PASSWORD", "")
+# Multi-user auth via JSON: {"username": "password", ...}
+# Falls back to single-user AUTH_USERNAME/AUTH_PASSWORD if AUTH_USERS is not set.
+_auth_users_raw = os.environ.get("AUTH_USERS", "")
+AUTH_USERS: dict[str, str] = {}
+if _auth_users_raw:
+    try:
+        AUTH_USERS = json.loads(_auth_users_raw)
+    except json.JSONDecodeError:
+        logger.error("AUTH_USERS is not valid JSON — ignoring")
+else:
+    _username = os.environ.get("AUTH_USERNAME", "admin")
+    _password = os.environ.get("AUTH_PASSWORD", "")
+    if _password:
+        AUTH_USERS = {_username: _password}
 
 # CORS
 CORS_ORIGIN = os.environ.get("CORS_ORIGIN", "")  # e.g. "https://my-frontend.azurecontainerapps.io"
@@ -43,7 +56,11 @@ RAG_TEMPERATURE = float(os.environ.get("RAG_TEMPERATURE", "0"))
 RAG_SEARCH_STRATEGY = os.environ.get("RAG_SEARCH_STRATEGY", "hybrid")  # "bm25", "vector", "hybrid"
 
 # Paths
-DATA_DIR = os.environ.get("DATA_DIR", os.path.join(os.path.dirname(__file__), "..", "..", "data"))
+# In container: /app/data. Locally: ../../data relative to this file.
+_default_data = os.path.join(os.path.dirname(__file__), "..", "..", "data")
+if not os.path.exists(_default_data):
+    _default_data = os.path.join(os.path.dirname(__file__), "data")
+DATA_DIR = os.environ.get("DATA_DIR", _default_data)
 NORM_CACHE_PATH = os.path.join(DATA_DIR, "norm_cache.json")
 
 # BMJ XML

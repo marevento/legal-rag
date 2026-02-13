@@ -10,7 +10,7 @@ param searchEndpoint string
 @secure()
 param searchKey string
 @secure()
-param authPassword string
+param authUsers string
 
 var abbrs = loadJsonContent('../abbreviations.json')
 
@@ -89,8 +89,8 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
           value: searchKey
         }
         {
-          name: 'auth-password'
-          value: authPassword
+          name: 'auth-users'
+          value: authUsers
         }
       ]
     }
@@ -98,7 +98,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
       containers: [
         {
           name: 'backend'
-          image: '${registry.properties.loginServer}/${name}:latest'
+          image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
           resources: {
             cpu: json('0.5')
             memory: '1Gi'
@@ -108,7 +108,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
             { name: 'AZURE_OPENAI_API_KEY', secretRef: 'openai-key' }
             { name: 'AZURE_SEARCH_ENDPOINT', value: searchEndpoint }
             { name: 'AZURE_SEARCH_API_KEY', secretRef: 'search-key' }
-            { name: 'AUTH_PASSWORD', secretRef: 'auth-password' }
+            { name: 'AUTH_USERS', secretRef: 'auth-users' }
             { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsights.properties.ConnectionString }
           ]
         }

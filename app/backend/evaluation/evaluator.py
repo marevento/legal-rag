@@ -5,7 +5,9 @@ from __future__ import annotations
 import logging
 import time
 from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
+from typing import AsyncGenerator
 
 from openai import AsyncAzureOpenAI
 
@@ -27,6 +29,16 @@ from models.evaluation import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class EvalProgress:
+    """Progress update during evaluation."""
+    completed: int
+    total: int
+    strategy: str
+    question: str
+    status: str = "running"  # "running", "throttled", "complete"
 
 
 def load_golden_dataset(path: Path) -> list[GoldenExample]:
@@ -83,6 +95,67 @@ async def run_evaluation(
     pattern_recommendations = _compute_pattern_recommendations(all_results, results_by_category)
 
     return MetricsReport(
+        results=all_results,
+        strategy_comparisons=strategy_comparisons,
+        pattern_recommendations=pattern_recommendations,
+        results_by_category={k: v for k, v in results_by_category.items()},
+    )
+
+
+async def run_evaluation_stream(
+    approach: Approach,
+    openai_client: AsyncAzureOpenAI,
+    examples: list[GoldenExample],
+    strategies: list[str] | None = None,
+    top_k: int = 5,
+) -> AsyncGenerator[EvalProgress | MetricsReport, None]:
+    """Streaming variant that yields progress updates."""
+    if strategies is None:
+        strategies = ["bm25", "vector", "hybrid"]
+
+    total = len(strategies) * len(examples)
+    completed = 0
+    all_results: list[EvalResult] = []
+
+    for strategy in strategies:
+        logger.info("Evaluating strategy: %s", strategy)
+        for example in examples:
+            yield EvalProgress(
+                completed=completed,
+                total=total,
+                strategy=strategy,
+                question=example.question,
+            )
+
+            start = time.perf_counter()
+            result = await _evaluate_single(
+                approach=approach,
+                openai_client=openai_client,
+                example=example,
+                strategy=strategy,
+                top_k=top_k,
+            )
+            elapsed = time.perf_counter() - start
+
+            all_results.append(result)
+            completed += 1
+
+            # Detect throttling: if a single eval took >10s, it likely hit rate limits
+            if elapsed > 10:
+                yield EvalProgress(
+                    completed=completed,
+                    total=total,
+                    strategy=strategy,
+                    question=example.question,
+                    status="throttled",
+                )
+
+    # Compute aggregated metrics
+    strategy_comparisons = _compute_strategy_comparisons(all_results, strategies)
+    results_by_category = _group_by_category(all_results)
+    pattern_recommendations = _compute_pattern_recommendations(all_results, results_by_category)
+
+    yield MetricsReport(
         results=all_results,
         strategy_comparisons=strategy_comparisons,
         pattern_recommendations=pattern_recommendations,

@@ -9,9 +9,9 @@ infra:
 
 services:
   backend:
-    project: ./app/backend
+    project: .
     language: python
     host: containerapp
     docker:
-      path: ./app/backend/Dockerfile
-      context: ./app/backend
+      path: Dockerfile
+      context: .

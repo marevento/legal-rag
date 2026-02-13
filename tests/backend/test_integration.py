@@ -39,8 +39,7 @@ async def app_with_client(tmp_path: Path):
         patch("config.AZURE_OPENAI_API_KEY", "fake-key"),
         patch("config.AZURE_SEARCH_ENDPOINT", "https://fake.search.windows.net"),
         patch("config.AZURE_SEARCH_API_KEY", "fake-key"),
-        patch("config.AUTH_PASSWORD", "testpass"),
-        patch("config.AUTH_USERNAME", "testuser"),
+        patch("config.AUTH_USERS", {"testuser": "testpass"}),
     ):
         app = create_app()
         async with app.test_app() as test_app:

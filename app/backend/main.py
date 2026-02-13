@@ -26,5 +26,15 @@ logging.basicConfig(
 app = create_app()
 
 if __name__ == "__main__":
+    from hypercorn.config import Config as HypercornConfig
+
     debug = os.environ.get("DEBUG", "false").lower() == "true"
-    app.run(host="127.0.0.1", port=50505, debug=debug)
+    hconfig = HypercornConfig()
+    host = os.environ.get("HOST", "127.0.0.1")
+    hconfig.bind = [f"{host}:50505"]
+    hconfig.response_timeout = 600  # 10 minutes (for evaluation SSE streams)
+
+    import asyncio
+    from hypercorn.asyncio import serve
+
+    asyncio.run(serve(app, hconfig))
