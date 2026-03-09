@@ -6,6 +6,10 @@
 
 RAG system for German tenancy law (BGB §§535-580a). Retrieves statutory norms via hybrid search and grounds every citation in verbatim source text through deterministic post-processing.
 
+Try it: https://ca-lafrvru2frc2k.gentleocean-0fa95861.swedencentral.azurecontainerapps.io/
+
+> **Note:** The app scales to zero instances when idle to minimize costs. The first request may take ~30 seconds (cold start).
+
 ## Tech Stack
 
 | Layer | Technology |
