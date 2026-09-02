@@ -52,3 +52,6 @@ htmlcov/
 
 # Misc
 *.log
+
+# Build artifacts
+app/frontend/tsconfig.tsbuildinfo
